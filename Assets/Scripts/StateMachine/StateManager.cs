@@ -32,6 +32,18 @@ public abstract class StateManager<Estate> : MonoBehaviour where Estate : Enum
         protected set => currentState = value;
     }
 
+    /// <summary>
+    /// Delegate fired when the state machine transitions from one state to another.
+    /// </summary>
+    /// <typeparam name="Estate">Enum type representing states.</typeparam>
+    /// <param name="fromState">The previous state before the transition.</param>
+    /// <param name="toState">The new state after the transition.</param>
+    public delegate void StateChangedHandler(Estate fromState, Estate toState);
+    /// <summary>
+    /// Callback fired whenever state changes
+    /// </summary>
+    public event StateChangedHandler OnStateChanged;
+
     private bool isTransitioning;
 
 
@@ -48,7 +60,7 @@ public abstract class StateManager<Estate> : MonoBehaviour where Estate : Enum
     {
         // Initialize the states dictionary with states defined in derived classes
         InitializeStates();
-        // Call the OnAwake method to allow derived classes to setup context
+        // Call the OnAwake method to allow derived classes to setup logic
         OnAwake();
     }
 
@@ -57,21 +69,23 @@ public abstract class StateManager<Estate> : MonoBehaviour where Estate : Enum
         // Assert that the current state is set before starting the state machine
         Assert.IsNotNull(currentState, $"Current state of {this.name} must be set before starting the state machine.");
         // Initialize the state machine with the states defined in derived classes
-        currentState.EnterState();
+        CurrentState.EnterState();
         // Call the OnStart method to allow derived classes to perform any additional setup
         OnStart();
     }
 
     private void Update()
     {
+        // Assert that the current state is not null before updating
+        Assert.IsNotNull(CurrentState, $"Current state of {this.name} must be not null.");
         // Field to hold the next state key
-        Estate nextStateKey = currentState.GetNextState();
+        Estate nextStateKey = CurrentState.GenerateNextState();
 
         // Check if needing to transition to a new state or using update mathod of the current state
         if (!isTransitioning && nextStateKey.Equals(currentState.StateKey))
         {
             // If the next state is the same as the current state, meaning no transition is needed
-            currentState.UpdateState();
+            CurrentState.UpdateState();
         }
         else if (!isTransitioning)
         {
@@ -91,13 +105,22 @@ public abstract class StateManager<Estate> : MonoBehaviour where Estate : Enum
 
 
     // Method to change the current state
-    private void TransitionToState(Estate stateKey)
+    private void TransitionToState(Estate nextStateKey)
     {
+        if (!statesDictionary.TryGetValue(nextStateKey, out var nextState))
+        {
+            Debug.LogError($"{name}: Cannot transition to undefined state: {nextStateKey}");
+            return;
+        }
+
         isTransitioning = true;
 
-        currentState.ExitState();
-        currentState = statesDictionary[stateKey];
-        currentState.EnterState();
+        Estate previousStateKey = CurrentState.StateKey;
+        CurrentState.ExitState();
+        CurrentState = statesDictionary[nextStateKey];
+        CurrentState.EnterState();
+
+        OnStateChanged?.Invoke(previousStateKey, nextStateKey);
 
         isTransitioning = false;
     }

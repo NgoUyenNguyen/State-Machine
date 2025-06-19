@@ -22,7 +22,7 @@ public abstract class BaseState<Estate> where Estate : Enum
     /// <summary>
     /// The key that identifies the state in Dictionary of states in the state machine.
     /// </summary>
-    public Estate StateKey { get; private set; }
+    public Estate StateKey { get; }
 
 
 
@@ -44,5 +44,5 @@ public abstract class BaseState<Estate> where Estate : Enum
     /// Method to get the next StateKey based on the current state logic
     /// </summary>
     /// <returns>Key to access next state</returns>
-    public abstract Estate GetNextState();
+    public abstract Estate GenerateNextState();
 }
