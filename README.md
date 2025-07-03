@@ -7,7 +7,7 @@ The BaseState includes:
 - abstract void UpdateState(): Method called every frame while in the State
 - abstract void ExitState(): Methods called once when a State is exited
 - abstract Estate GenerateNextState(): Method to generate the next state based on the current state logic.
-- 
+  
 The StateMachine includes:
 - statesDictionary: Dictionary to hold all states with their corresponding keys
 - CurrentState: The current state of the state machine (get; protected set;)
