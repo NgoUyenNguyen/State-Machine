@@ -9,12 +9,12 @@ The BaseState includes:
 - abstract EState GenerateNextState(): Method to generate the next state based on the current state logic.
   
 The StateMachine includes:
-- CurrentState: The current state of the state machine (get; protected set;)
+- CurrentState: The current state of the state machine
 - event OnStateChanged(fromStateKey, toStateKey): Callback fired whenever state changes
-- abstract InitializeStates(): register all states by using AddStates()
+- <span style="color:red">abstract InitializeStates()</span>: register all states by using AddStates()
 - abstract InitializeEntryState(): Define the entry state
-- AddStates(params states): Add states to the state machine
-- RemoveStates(params states): Remove states from the state machine
+- AddStates(states): Add states to the state machine
+- RemoveStates(states): Remove states from the state machine
 - GetState(Estate) get state from key
-- virtual void OnAwake(): Method is called in Awake()
-- virtual void OnStart(): Method is called in Start()
+- virtual OnAwake(): Method is called in Awake()
+- virtual OnStart(): Method is called in Start()
