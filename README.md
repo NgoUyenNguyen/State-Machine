@@ -10,7 +10,7 @@ BASESTATE INCLUDES:
   
 STATEMANAGER INCLUDES:
 - 🟢CurrentState: The current state of the state machine
-- 🟦event OnStateChanged(fromStateKey, toStateKey): Callback fired whenever state changes
+- ⚡event OnStateChanged(fromStateKey, toStateKey): Callback fired whenever state changes
 - 🔴abstract InitializeStates(): register all states by using AddStates()
 - 🔴abstract InitializeEntryState(): Define the entry state
 - 🟢AddStates(states): Add states to the state machine
