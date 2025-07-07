@@ -3,15 +3,18 @@ Base system to create a state framework, including an abstract class BaseState a
 
 The BaseState includes:
 - StateKey: a key equivalent to each State for StateMachine managing
-- abstract void EnterState(): Methods called once when a State is entered
-- abstract void UpdateState(): Method called every frame while in the State
-- abstract void ExitState(): Methods called once when a State is exited
-- abstract Estate GenerateNextState(): Method to generate the next state based on the current state logic.
+- abstract EnterState(): Methods called once when a State is entered
+- abstract UpdateState(): Method called every frame while in the State
+- abstract ExitState(): Methods called once when a State is exited
+- abstract EState GenerateNextState(): Method to generate the next state based on the current state logic.
   
 The StateMachine includes:
-- statesDictionary: Dictionary to hold all states with their corresponding keys
 - CurrentState: The current state of the state machine (get; protected set;)
 - event OnStateChanged(fromStateKey, toStateKey): Callback fired whenever state changes
-- abstract void InitializeStates(): Initialize states in derived classes. You must register all states by adding them to the statesDictionary and set the current state to one of the states.
-- virtual void OnAwake(): Method is called in the Awake() method of the StateManager
-- virtual void OnStart(): Method is called in the Start() method of the StateManager
+- abstract InitializeStates(): register all states by using AddStates()
+- abstract InitializeEntryState(): Define the entry state
+- AddStates(params states): Add states to the state machine
+- RemoveStates(params states): Remove states from the state machine
+- GetState(Estate) get state from key
+- virtual void OnAwake(): Method is called in Awake()
+- virtual void OnStart(): Method is called in Start()
