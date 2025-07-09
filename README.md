@@ -18,3 +18,5 @@ STATEMANAGER INCLUDES:
 - 🟢GetState(Estate) get state from key
 - 🟡virtual OnAwake(): Method is called in Awake()
 - 🟡virtual OnStart(): Method is called in Start()
+
+  ![Illustration](StructureIllustration.png)
