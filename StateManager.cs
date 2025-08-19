@@ -26,11 +26,13 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     /// <summary>
     /// The current state of the state machine
     /// </summary>
-    public BaseState<EState> CurrentState
+    public BaseState<EState> currentState
     {
         get => _currentState;
         private set => _currentState = value;
     }
+
+    private BaseState<EState> stateBuffer { get; set; }
 
     /// <summary>
     /// Delegate fired when the state machine transitions from one state to another.
@@ -67,11 +69,11 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     private void Start()
     {
         // Set the CurrentState to the EntryState
-        CurrentState = GetState(InitializeEntryState());
+        currentState = GetState(InitializeEntryState());
         // Assert that the current state is set before starting the state machine
         Assert.IsNotNull(_currentState, $"Current state of {this.name} must be set before starting the state machine.");
         // Initialize the state machine with the states defined in derived classes
-        CurrentState.EnterState();
+        currentState.EnterState();
         // Call the OnStart method to allow derived classes to perform any additional setup
         OnStart();
     }
@@ -79,20 +81,32 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     private void Update()
     {
         // Assert that the current state is not null before updating
-        Assert.IsNotNull(CurrentState, $"Current state of {this.name} must be not null.");
-        // Field to hold the next state key
-        EState nextStateKey = CurrentState.GenerateNextState();
+        Assert.IsNotNull(currentState, $"Current state of {this.name} must be not null.");
+
+        BaseState<EState> nextState = null;
+
+        if (stateBuffer != null)
+        {
+            // Next state assigned outerally
+            nextState = stateBuffer;
+            stateBuffer = null;
+        }
+        else
+        {
+            // Next state assigned internally
+            nextState = GetState(currentState.GenerateNextState());
+        }
 
         // Check if needing to transition to a new state or using update mathod of the current state
-        if (!isTransitioning && nextStateKey.Equals(CurrentState.StateKey))
+        if (!isTransitioning && nextState == currentState)
         {
             // If the next state is the same as the current state, meaning no transition is needed
-            CurrentState.UpdateState();
+            currentState.UpdateState();
         }
         else if (!isTransitioning)
         {
-            // If a transition is needed, call the TransitionToState method with the next state key
-            TransitionToState(nextStateKey);
+            // If a transition is needed, call the TransitionToState method
+            TransitionToState(nextState);
         }
     }
 
@@ -107,27 +121,52 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
 
 
     // Method to change the current state
-    private void TransitionToState(EState nextStateKey)
+    private void TransitionToState(BaseState<EState> nextState)
     {
-        if (!statesDictionary.TryGetValue(nextStateKey, out var nextState))
-        {
-            Debug.LogError($"{name}: Cannot transition to undefined state: {nextStateKey}");
-            return;
-        }
+        // Check if the dictionary contains the next state
+        if (!IsStateDefined(nextState.stateKey)) return;
+
 
         isTransitioning = true;
 
-        EState previousStateKey = CurrentState.StateKey;
-        CurrentState.ExitState();
-        CurrentState = statesDictionary[nextStateKey];
-        CurrentState.EnterState();
+        EState currentStateKey = currentState.stateKey;
+        currentState.ExitState();
 
-        OnStateChanged?.Invoke(previousStateKey, nextStateKey);
+        currentState = nextState;
+        currentState.EnterState();
+
+        OnStateChanged?.Invoke(currentStateKey, nextState.stateKey);
+
+        stateBuffer = null; // Clear the buffer after transition
 
         isTransitioning = false;
     }
 
-    private 
+    // Method to check if a state is defined in the state machine
+    private bool IsStateDefined(EState stateKey)
+    {
+        if (statesDictionary.ContainsKey(stateKey))
+        {
+            return true;
+        }
+        else
+        {
+            Debug.LogError($"{name}: State {stateKey} is not defined in the state machine.");
+            return false;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
     /// <summary>
     /// Method to add a states to the state machine
@@ -136,12 +175,12 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     {
         foreach (var state in states)
         {
-            if (statesDictionary.ContainsKey(state.StateKey))
+            if (statesDictionary.ContainsKey(state.stateKey))
             {
-                Debug.LogError($"{name}: State {state.StateKey} already exists in the state machine.");
+                Debug.LogError($"{name}: State {state.stateKey} already exists in the state machine.");
                 return;
             }
-            statesDictionary.Add(state.StateKey, state);
+            statesDictionary.Add(state.stateKey, state);
         }
     }
 
@@ -152,12 +191,12 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     {
         foreach (var state in states)
         {
-            if (!statesDictionary.ContainsKey(state.StateKey))
+            if (!statesDictionary.ContainsKey(state.stateKey))
             {
-                Debug.LogError($"{name}: State {state.StateKey} does not exist in the state machine.");
+                Debug.LogError($"{name}: State {state.stateKey} does not exist in the state machine.");
                 return;
             }
-            statesDictionary.Remove(state.StateKey);
+            statesDictionary.Remove(state.stateKey);
         }
     }
 
@@ -170,6 +209,9 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
         }
         return statesDictionary[key];
     }
+
+
+
 
     /// <summary>
     /// Method to initialize states in StatesDictionary
@@ -193,4 +235,28 @@ public abstract class StateManager<EState> : MonoBehaviour where EState : Enum
     /// Method is called in the Start() method of the StateManager 
     /// </summary>
     protected virtual void OnStart() { }
+
+
+
+
+
+
+    /// <summary>
+    /// Method for outer to set the next state of the state machine.
+    /// </summary>
+    public void SetNextState(EState nextStateKey)
+    {
+        // Check if the next state key exists in the states dictionary
+        if (statesDictionary.ContainsKey(nextStateKey))
+        {
+            if (statesDictionary[nextStateKey] != stateBuffer)
+            {
+                stateBuffer = statesDictionary[nextStateKey];
+            }
+        }
+        else
+        {
+            Debug.LogError($"{name}: Cannot set next state to undefined state: {nextStateKey}");
+        }
+    }
 }
